@@ -1,0 +1,37 @@
+CPS-converted transitive closure function | Spencer Tipping
+Licensed under the terms of the MIT source code license
+
+Motivation.
+JavaScript uses nonblocking server IO, so this requires CPS-converted code (e.g. doSomething(function (result) {...})). One useful function, though tedious to write by hand, is the transitive
+closure relation; that is, given some function x -> [x1, x2, x3, ..., xn], perform a depth-first search until f(xi) == [] for each i. A common use case for this is when you have a directed
+acyclic graph (such as a tree) and you want to grab all of the descendants of a node asynchronously.
+
+Interface.
+Suppose you have an AJAX resource that is hierarchical somehow; for instance, let's suppose that the server sends down object-oriented class definitions, and each has one or more parent
+classes. We want to find all of the superclasses of a given class. Then the setup would look something like this:
+
+| cps_transitive_closure (initial_class,
+                          function (some_class, continuation) {
+                            $.get ('/classes/' + some_class.name, function (data) {
+                              continuation (data.parent_classes);
+                            });
+                          },
+                          function (result) {
+                            alert ('The parent classes are: ' + result.join(', '));
+                          });
+
+var cps_transitive_closure = function (initial, f, cc) {
+  var queue = [initial],
+     result = [],
+        one = function () {
+                if (! queue.length) cc(result);
+                else {
+                  f (queue.shift(), function (xs) {
+                    queue  = queue.concat  (xs || []);
+                    result = result.concat (xs || []);
+                    one();
+                  });
+                }
+              };
+  return one();
+};
