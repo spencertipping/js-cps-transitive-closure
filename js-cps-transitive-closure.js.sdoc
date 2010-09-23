@@ -25,17 +25,17 @@ Specifically, the three arguments to cps_transitive_closure are:
   3. A callback to receive the resulting array.
 
 var cps_transitive_closure = function (initial_set, f, cc) {
-  var queue = Array.prototype.slice.call (initial_set),
-     result = [],
-        one = function () {
-                if (! queue.length) cc(result);
-                else {
-                  return f (queue.shift(), function (x, qs) {
-                    queue = queue.concat (qs || []);
-                    result.push(x);
-                    return one();
-                  });
-                }
-              };
+  var queue  = Array.prototype.slice.call (initial_set);
+  var result = [];
+  var one    = function () {
+    return ! queue.length ?
+      cc(result) :
+      f (queue.shift(), function (x, qs) {
+        queue = queue.concat (qs || []);
+        result.push(x);
+        return one();
+      });
+    }
+  };
   return one();
 };
