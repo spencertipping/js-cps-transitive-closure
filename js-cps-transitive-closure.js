@@ -6,30 +6,34 @@
 // closure relation; that is, given some function x -> [x1, x2, x3, ..., xn], perform a depth-first search until f(xi) == [] for each i. A common use case for this is when you have a directed
 // acyclic graph (such as a tree) and you want to grab all of the descendants of a node asynchronously.
 
-// Interface.
-// Suppose you have an AJAX resource that is hierarchical somehow; for instance, let's suppose that the server sends down object-oriented class definitions, and each has one or more parent
-// classes. We want to find all of the superclasses of a given class. Then the setup would look something like this:
+// This library tries to make such things straightforward by abstracting away the depth-first traversal. It assumes that you want an array of results (one item per node traversed), and you can
+// specify additional nodes to traverse. The usage looks like this:
 
-// | cps_transitive_closure (initial_class,
-//                           function (some_class, continuation) {
-//                             $.get ('/classes/' + some_class.name, function (data) {
-//                               continuation (data.parent_classes);
-//                             });
+// | cps_transitive_closure (initial_set,
+//                           function (x, k) {
+//                             k (element_for_x, additional_elements);
 //                           },
 //                           function (result) {
-//                             alert ('The parent classes are: ' + result.join(', '));
+//                             alert (result.join (', '));
 //                           });
 
-var cps_transitive_closure = function (initial, f, cc) {
-  var queue = [initial],
+// Specifically, the three arguments to cps_transitive_closure are:
+
+// | 1. The initial set of elements to enqueue in the search space. This is an array.
+//   2. A function that takes two arguments, the first being an element and the second being a continuation, and invokes the continuation with a value to append to the resulting array and
+//      optionally an array of additional elements that will need to be explored.
+//   3. A callback to receive the resulting array.
+
+var cps_transitive_closure = function (initial_set, f, cc) {
+  var queue = Array.prototype.slice.call (initial_set),
      result = [],
         one = function () {
                 if (! queue.length) cc(result);
                 else {
-                  f (queue.shift(), function (xs) {
-                    queue  = queue.concat  (xs || []);
-                    result = result.concat (xs || []);
-                    one();
+                  return f (queue.shift(), function (x, qs) {
+                    queue = queue.concat (qs || []);
+                    result.push(x);
+                    return one();
                   });
                 }
               };
