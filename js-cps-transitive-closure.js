@@ -35,7 +35,6 @@ var cps_transitive_closure = function (initial_set, f, cc) {
         result.push(x);
         return one();
       });
-    }
   };
   return one();
 };
